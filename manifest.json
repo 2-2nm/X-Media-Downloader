@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "X Media Downloader",
+  "version": "1.3",
+  "description": "Download original photos and MP4 videos from X",
+  "permissions": ["downloads", "storage"],
+  "host_permissions": [
+    "*://x.com/*",
+    "*://twitter.com/*",
+    "*://pbs.twimg.com/*",
+    "*://video.twimg.com/*",
+    "*://cdn.syndication.twimg.com/*"
+  ],
+  "action": {
+    "default_title": "X Media Downloader",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://x.com/*", "*://twitter.com/*"],
+      "js": ["interceptor.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://x.com/*", "*://twitter.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

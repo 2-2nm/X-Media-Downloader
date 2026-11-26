@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>X Media Downloader</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #000000;
+      --text: #e7e9ea;
+      --muted: #71767b;
+      --border: #2f3336;
+      --accent: #1d9bf0;
+      --accent-hover: #1a8cd8;
+      --ok: #00ba7c;
+    }
+    body {
+      margin: 0;
+      width: 280px;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+    }
+    button {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      border-radius: 9999px;
+      padding: 8px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: var(--accent-hover);
+    }
+    #status {
+      color: var(--ok);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>X Media Downloader</h1>
+  <label for="folder">Save folder</label>
+  <input id="folder" type="text" spellcheck="false" autocomplete="off">
+  <div class="hint">Relative to your browser's Downloads folder. Leave empty to save directly in Downloads.</div>
+  <div class="row">
+    <span id="status"></span>
+    <button id="save" type="button">Save</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
