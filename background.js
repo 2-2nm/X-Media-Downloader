@@ -35,6 +35,16 @@ function formatDate(createdAt) {
   return isNaN(d.getTime()) ? "unknown-date" : d.toISOString().split("T")[0];
 }
 
+function isHttpsUrl(url) {
+  return typeof url === "string" && url.startsWith("https://");
+}
+
+function isUsable(media, allowGaps = false) {
+  const items = media?.items || [];
+  const present = allowGaps ? items.filter(Boolean) : items;
+  return present.length > 0 && present.every((i) => isHttpsUrl(i?.url));
+}
+
 async function fetchSyndication(tweetId) {
   const url =
     `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}` +
@@ -52,9 +62,10 @@ async function fetchSyndication(tweetId) {
           .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
         return { type: "mp4", url: mp4s[0]?.url };
       }
-      return { type: "jpg", url: `${m.media_url_https}?name=orig` };
+      const photo = m.media_url_https;
+      return { type: "jpg", url: isHttpsUrl(photo) ? `${photo}?name=orig` : null };
     })
-    .filter((item) => item.url);
+    .filter((item) => isHttpsUrl(item.url));
 
   if (items.length === 0) {
     return {
@@ -72,11 +83,13 @@ async function fetchSyndication(tweetId) {
 }
 
 async function handleDownload(msg) {
-  let media = msg.media;
+  let media = isUsable(msg.media) ? msg.media : null;
   if (!media) {
-    const found = await fetchSyndication(msg.tweetId);
-    if (!found.media) return { ok: false, reason: found.reason };
-    media = found.media;
+    const found = await fetchSyndication(msg.tweetId).catch((err) => ({
+      reason: `syndication-error: ${err?.message || err}`
+    }));
+    media = found.media || (isUsable(msg.fallback, true) ? msg.fallback : null);
+    if (!media) return { ok: false, reason: found.reason };
   }
 
   const { folder } = await chrome.storage.local.get({ folder: DEFAULT_FOLDER });
@@ -87,7 +100,7 @@ async function handleDownload(msg) {
   const single = Number.isInteger(msg.index);
   const targets = single
     ? [[msg.index, items[msg.index]]]
-    : items.map((item, i) => [i, item]);
+    : items.map((item, i) => [i, item]).filter(([, item]) => item);
 
   if (targets.some(([, item]) => !item)) {
     return { ok: false, reason: "index-out-of-range" };
@@ -110,6 +123,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action !== "download" || !msg.tweetId) return;
   handleDownload(msg)
     .then(sendResponse)
-    .catch(() => sendResponse({ ok: false }));
+    .catch((err) => {
+      console.error("[X-DL]", msg.tweetId, err);
+      sendResponse({ ok: false, reason: `error: ${err?.message || err}` });
+    });
   return true;
 });

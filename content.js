@@ -42,6 +42,8 @@ window.addEventListener("X_MEDIA_FOUND", (e) => {
   schedule();
 });
 
+window.dispatchEvent(new CustomEvent("X_MEDIA_REQUEST"));
+
 function getCandidateIds(article) {
   const ids = [];
   article.querySelectorAll('a[href*="/status/"]').forEach((a) => {
@@ -82,6 +84,34 @@ function findLightboxBars() {
       group.children.length >= 4 &&
       group.getClientRects().length > 0
   );
+}
+
+function getPagePhotos(tweetId) {
+  const items = [];
+  let username = "x_user";
+  let date = "unknown-date";
+
+  document
+    .querySelectorAll(`a[href*="/status/${tweetId}/photo/"]`)
+    .forEach((a) => {
+      const link = a.getAttribute("href").match(/^\/(\w+)\/status\/\d+\/photo\/(\d+)/);
+      const img = a.querySelector('img[src*="pbs.twimg.com/media/"]');
+      if (!link || !img) return;
+
+      const url = new URL(img.src);
+      const type = url.searchParams.get("format") || "jpg";
+      url.searchParams.set("format", type);
+      url.searchParams.set("name", "orig");
+      items[Number(link[2]) - 1] = { type, url: url.href };
+      username = link[1];
+
+      const time = a
+        .closest("article")
+        ?.querySelector(`a[href$="/status/${tweetId}"] time`);
+      if (time) date = time.dateTime.split("T")[0];
+    });
+
+  return items.length > 0 ? { username, date, items } : null;
 }
 
 function createDownloadIcon() {
@@ -178,7 +208,8 @@ function createButton(baseColor) {
         action: "download",
         tweetId,
         index,
-        media: mediaStore.get(tweetId) || null
+        media: mediaStore.get(tweetId) || null,
+        fallback: getPagePhotos(tweetId)
       });
       if (res && res.ok) {
         downloadedIds.add(index === null ? tweetId : `${tweetId}:${index}`);
@@ -188,6 +219,7 @@ function createButton(baseColor) {
         flashFail(btn);
       }
     } catch (err) {
+      console.warn("[X-DL] download failed", tweetId, err?.message || err);
       flashFail(btn);
     }
   });
